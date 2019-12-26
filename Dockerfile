@@ -1,6 +1,6 @@
 # Requires support for multi-stage builds, available in Docker 17.05 or later
 # First build RoboZonky and unpack into the install directory...
-FROM maven:3-jdk-11 AS scratch
+FROM arm32v7/maven:3-jdk-11 AS buster
 ENV SOURCE_DIRECTORY=/usr/src/robozonky \
     BINARY_DIRECTORY=/tmp/robozonky
 COPY . $SOURCE_DIRECTORY
@@ -18,7 +18,7 @@ RUN ROBOZONKY_VERSION=$(mvn -q \
     && chmod +x /tmp/robozonky/robozonky.sh
 
 # ... then restart from a minimal image and copy built binary from previous stage
-FROM adoptopenjdk/openjdk13:alpine-jre
+FROM adoptopenjdk/openjdk13:debian-slim
 LABEL maintainer="The RoboZonky Project (www.robozonky.cz)"
 ENV INSTALL_DIRECTORY=/opt/robozonky \
      CONFIG_DIRECTORY=/etc/robozonky \
@@ -27,6 +27,6 @@ ENV INSTALL_DIRECTORY=/opt/robozonky \
 ENV JAVA_OPTS="$JAVA_OPTS \
     -Drobozonky.properties.file=$CONFIG_DIRECTORY/robozonky.properties \
     -Dlog4j.configurationFile=$CONFIG_DIRECTORY/log4j2.xml"
-COPY --from=scratch /tmp/robozonky $INSTALL_DIRECTORY
+COPY --from=buster /tmp/robozonky $INSTALL_DIRECTORY
 WORKDIR $WORKING_DIRECTORY
 ENTRYPOINT $INSTALL_DIRECTORY/robozonky.sh @$CONFIG_DIRECTORY/robozonky.cli
